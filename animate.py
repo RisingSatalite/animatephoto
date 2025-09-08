@@ -16,7 +16,7 @@ def generate_depth(image_path, depth_path="depth.jpg"):
     from PIL import Image
 
     # Pick model type
-    model_type = "DPT_Large"  # try "DPT_Hybrid" if slow
+    model_type = "DPT_Large"  # "DPT_Hybrid" if slow, or "MiDaS_small" for lightweight
     midas = torch.hub.load("intel-isl/MiDaS", model_type)
     midas.eval()
 
@@ -28,18 +28,12 @@ def generate_depth(image_path, depth_path="depth.jpg"):
     if img is None:
         raise FileNotFoundError(f"Could not load image: {image_path}")
 
-    # Convert to RGB uint8
+    # Convert OpenCV → RGB → PIL
     img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    img_rgb = np.asarray(img_rgb, dtype=np.uint8)
+    img_pil = Image.fromarray(img_rgb)
 
-    # Apply correct transform
-    if "DPT" in model_type:
-        # DPT models accept numpy arrays directly
-        input_batch = transform(img_rgb).unsqueeze(0)
-    else:
-        # Small models require PIL.Image
-        img_pil = Image.fromarray(img_rgb)
-        input_batch = transform(img_pil).unsqueeze(0)
+    # Apply transform
+    input_batch = transform(img_pil).unsqueeze(0)
 
     # Run inference
     with torch.no_grad():
@@ -47,13 +41,12 @@ def generate_depth(image_path, depth_path="depth.jpg"):
         depth = prediction.squeeze().cpu().numpy()
 
     # Normalize depth to 0–255
-    depth_min = depth.min()
-    depth_max = depth.max()
+    depth_min, depth_max = depth.min(), depth.max()
     depth_normalized = (255 * (depth - depth_min) / (depth_max - depth_min)).astype(np.uint8)
 
     cv2.imwrite(depth_path, depth_normalized)
-
     print(f"Depth map saved to {depth_path}")
+
     return img_rgb, depth_normalized
 
 # ------------------------------
