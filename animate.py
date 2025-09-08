@@ -5,21 +5,25 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.animation as animation
 import os
+from PIL import Image
 
 # ------------------------------
 # 1. Generate Depth Map with MiDaS
 # ------------------------------
 def generate_depth(image_path, depth_path="depth.jpg"):
     # Load MiDaS model
-    midas = torch.hub.load("intel-isl/MiDaS", "DPT_Large")
+    model_type = "DPT_Large"  # or "DPT_Hybrid" for faster
+    midas = torch.hub.load("intel-isl/MiDaS", model_type)
     midas.eval()
 
-    transform = torch.hub.load("intel-isl/MiDaS", "transforms").dpt_transform
+    transforms = torch.hub.load("intel-isl/MiDaS", "transforms")
+    transform = transforms.dpt_transform  # ✅ correct for DPT models
 
     # Load image
     img = cv2.imread(image_path)
     img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
+    # Apply transform directly on NumPy
     input_batch = transform(img_rgb).unsqueeze(0)
 
     # Run model
