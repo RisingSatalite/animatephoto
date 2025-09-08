@@ -12,6 +12,8 @@ import numpy as np
 # 1. Generate Depth Map with MiDaS
 # ------------------------------
 def generate_depth(image_path, depth_path="depth.jpg"):
+    import torch, cv2, numpy as np
+    from PIL import Image
 
     # Pick model type
     model_type = "DPT_Large"  # try "DPT_Hybrid" if slow
@@ -26,14 +28,16 @@ def generate_depth(image_path, depth_path="depth.jpg"):
     if img is None:
         raise FileNotFoundError(f"Could not load image: {image_path}")
 
-    img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB).astype(np.uint8)
+    # Convert to RGB uint8
+    img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     img_rgb = np.asarray(img_rgb, dtype=np.uint8)
 
-    # Convert to PIL if using small model
+    # Apply correct transform
     if "DPT" in model_type:
+        # DPT models accept numpy arrays directly
         input_batch = transform(img_rgb).unsqueeze(0)
     else:
-        from PIL import Image
+        # Small models require PIL.Image
         img_pil = Image.fromarray(img_rgb)
         input_batch = transform(img_pil).unsqueeze(0)
 
@@ -45,9 +49,11 @@ def generate_depth(image_path, depth_path="depth.jpg"):
     # Normalize depth to 0–255
     depth_min = depth.min()
     depth_max = depth.max()
-    depth_normalized = (255 * (depth - depth_min) / (depth_max - depth_min)).astype("uint8")
+    depth_normalized = (255 * (depth - depth_min) / (depth_max - depth_min)).astype(np.uint8)
 
     cv2.imwrite(depth_path, depth_normalized)
+
+    print(f"Depth map saved to {depth_path}")
     return img_rgb, depth_normalized
 
 # ------------------------------
