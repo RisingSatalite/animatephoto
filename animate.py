@@ -13,7 +13,6 @@ import numpy as np
 # ------------------------------
 def generate_depth(image_path, depth_path="depth.jpg"):
     import torch, cv2, numpy as np
-    from PIL import Image
 
     # Pick model type
     model_type = "DPT_Large"  # "DPT_Hybrid" if slow, or "MiDaS_small" for lightweight
@@ -28,12 +27,11 @@ def generate_depth(image_path, depth_path="depth.jpg"):
     if img is None:
         raise FileNotFoundError(f"Could not load image: {image_path}")
 
-    # Convert OpenCV → RGB → PIL
-    img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    img_pil = Image.fromarray(img_rgb)
+    # Convert BGR → RGB NumPy
+    img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB).astype(np.uint8)
 
-    # Apply transform
-    input_batch = transform(img_pil).unsqueeze(0)
+    # Apply transform (expects NumPy)
+    input_batch = transform(img_rgb).unsqueeze(0)
 
     # Run inference
     with torch.no_grad():
