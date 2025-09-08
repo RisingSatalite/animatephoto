@@ -6,32 +6,43 @@ from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.animation as animation
 import os
 from PIL import Image
+import numpy as np
 
 # ------------------------------
 # 1. Generate Depth Map with MiDaS
 # ------------------------------
 def generate_depth(image_path, depth_path="depth.jpg"):
-    # Load MiDaS model
-    model_type = "DPT_Large"  # or "DPT_Hybrid" for faster
+
+    # Pick model type
+    model_type = "DPT_Large"  # try "DPT_Hybrid" if slow
     midas = torch.hub.load("intel-isl/MiDaS", model_type)
     midas.eval()
 
     transforms = torch.hub.load("intel-isl/MiDaS", "transforms")
-    transform = transforms.dpt_transform  # ✅ correct for DPT models
+    transform = transforms.dpt_transform if "DPT" in model_type else transforms.small_transform
 
     # Load image
     img = cv2.imread(image_path)
-    img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    if img is None:
+        raise FileNotFoundError(f"Could not load image: {image_path}")
 
-    # Apply transform directly on NumPy
-    input_batch = transform(img_rgb).unsqueeze(0)
+    img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB).astype(np.uint8)
+    img_rgb = np.asarray(img_rgb, dtype=np.uint8)
 
-    # Run model
+    # Convert to PIL if using small model
+    if "DPT" in model_type:
+        input_batch = transform(img_rgb).unsqueeze(0)
+    else:
+        from PIL import Image
+        img_pil = Image.fromarray(img_rgb)
+        input_batch = transform(img_pil).unsqueeze(0)
+
+    # Run inference
     with torch.no_grad():
         prediction = midas(input_batch)
         depth = prediction.squeeze().cpu().numpy()
 
-    # Normalize depth
+    # Normalize depth to 0–255
     depth_min = depth.min()
     depth_max = depth.max()
     depth_normalized = (255 * (depth - depth_min) / (depth_max - depth_min)).astype("uint8")
