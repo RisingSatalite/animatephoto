@@ -7,6 +7,7 @@ import matplotlib.animation as animation
 import os
 from PIL import Image
 import numpy as np
+import timm
 
 # ------------------------------
 # 1. Generate Depth Map with MiDaS
@@ -27,10 +28,16 @@ def generate_depth(image_path, depth_path="depth.jpg"):
     if img is None:
         raise FileNotFoundError(f"Could not load image: {image_path}")
 
-    # Convert BGR → RGB NumPy
-    img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB).astype(np.uint8)
+    # Convert BGR → RGB and enforce dtype
+    img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
-    # Apply transform (expects NumPy)
+    # Make sure dtype is uint8
+    if img_rgb.dtype != np.uint8:
+        img_rgb = img_rgb.astype(np.uint8)
+
+    print("img_rgb dtype:", img_rgb.dtype, "shape:", img_rgb.shape, type(img_rgb))
+
+    # Now safe to call transform
     input_batch = transform(img_rgb).unsqueeze(0)
 
     # Run inference
