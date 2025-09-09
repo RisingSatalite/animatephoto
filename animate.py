@@ -37,8 +37,17 @@ def generate_depth(image_path, depth_path="depth.jpg"):
 
     print("img_rgb dtype:", img_rgb.dtype, "shape:", img_rgb.shape, type(img_rgb))
 
-    # Now safe to call transform
-    input_batch = transform(img_rgb).unsqueeze(0)
+    # Now safe to apply and call transform
+    input_data = transform(img_rgb)
+    print("Transform output shape:", input_data.shape)
+
+    # Ensure batch dimension is correct
+    if input_data.ndim == 3:   # (C, H, W)
+        input_batch = input_data.unsqueeze(0)
+    elif input_data.ndim == 4: # (B, C, H, W)
+        input_batch = input_data
+    else:
+        raise ValueError(f"Unexpected transform output shape: {input_data.shape}")
 
     # Run inference
     with torch.no_grad():
