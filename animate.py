@@ -8,6 +8,8 @@ import os
 from PIL import Image
 import numpy as np
 import timm
+import matplotlib
+import imageio_ffmpeg as ffmpeg
 
 # ------------------------------
 # 1. Generate Depth Map with MiDaS
@@ -93,8 +95,14 @@ def create_cinematic(img, depth, output="cinematic.mp4"):
                         facecolors=img/255, linewidth=0,
                         antialiased=False, shade=False)
 
+    # Ensure Matplotlib uses imageio-ffmpeg
+    matplotlib.rcParams['animation.ffmpeg_path'] = ffmpeg.get_ffmpeg_exe()
+
+    Writer = animation.writers['ffmpeg']
+    writer = Writer(fps=20, metadata=dict(artist='me'), bitrate=1800)
+
     ani = animation.FuncAnimation(fig, update, frames=90, interval=50)
-    ani.save(output, writer="ffmpeg", fps=20)
+    ani.save("output.mp4", writer=writer)
 
 # ------------------------------
 # Main
