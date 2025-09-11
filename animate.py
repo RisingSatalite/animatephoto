@@ -86,7 +86,7 @@ def create_cinematic(img, depth, output="cinematic.mp4"):
         # Camera motion: pan + zoom effect
         ax.view_init(70, 70 + frame*0.5)
         ax.dist = 7 - (frame * 0.02)  # zoom-in effect
-        ax.plot_surface(X, -Y, Z, rstride=5, cstride=5,
+        ax.plot_surface(X, Y, Z, rstride=5, cstride=5,
                         facecolors=img/255, linewidth=0,
                         antialiased=False, shade=False)
 
