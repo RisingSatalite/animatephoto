@@ -84,9 +84,9 @@ def create_cinematic(img, depth, output="cinematic.mp4"):
         ax.cla()
         ax.axis("off")
         # Camera motion: pan + zoom effect
-        ax.view_init(-70, 70 + frame*0.5)
+        ax.view_init(70, 70 + frame*0.5)
         ax.dist = 7 - (frame * 0.02)  # zoom-in effect
-        ax.plot_surface(X, -Y, -Z, rstride=5, cstride=5,
+        ax.plot_surface(X, -Y, Z, rstride=5, cstride=5,
                         facecolors=img/255, linewidth=0,
                         antialiased=False, shade=False)
 
@@ -103,7 +103,7 @@ def create_cinematic(img, depth, output="cinematic.mp4"):
 # Main
 # ------------------------------
 if __name__ == "__main__":
-    image_path = "example.png"  # input image
+    image_path = "cat.jpg"  # input image
     print("Looking for:", os.path.abspath(image_path))
     print("Exists?", os.path.exists(image_path))
     img, depth = generate_depth(image_path)
