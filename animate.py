@@ -30,26 +30,17 @@ def generate_depth(image_path, depth_path="depth.jpg"):
     if img is None:
         raise FileNotFoundError(f"Could not load image: {image_path}")
 
-    # Convert BGR → RGB and enforce dtype
+    # Convert BGR → RGB
     img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
-    # Make sure dtype is uint8
-    if img_rgb.dtype != np.uint8:
-        img_rgb = img_rgb.astype(np.uint8)
-
-    print("img_rgb dtype:", img_rgb.dtype, "shape:", img_rgb.shape, type(img_rgb))
-
-    # Now safe to apply and call transform
+    # Apply transform
     input_data = transform(img_rgb)
-    print("Transform output shape:", input_data.shape)
 
-    # Ensure batch dimension is correct
+    # Ensure batch dimension
     if input_data.ndim == 3:   # (C, H, W)
         input_batch = input_data.unsqueeze(0)
-    elif input_data.ndim == 4: # (B, C, H, W)
+    else:  # Already batched
         input_batch = input_data
-    else:
-        raise ValueError(f"Unexpected transform output shape: {input_data.shape}")
 
     # Run inference
     with torch.no_grad():
@@ -60,10 +51,14 @@ def generate_depth(image_path, depth_path="depth.jpg"):
     depth_min, depth_max = depth.min(), depth.max()
     depth_normalized = (255 * (depth - depth_min) / (depth_max - depth_min)).astype(np.uint8)
 
-    cv2.imwrite(depth_path, depth_normalized)
-    print(f"Depth map saved to {depth_path}")
+    # 🔑 Resize back to original image size
+    depth_resized = cv2.resize(depth_normalized, (img.shape[1], img.shape[0]), interpolation=cv2.INTER_CUBIC)
 
-    return img_rgb, depth_normalized
+    # Save depth map
+    cv2.imwrite(depth_path, depth_resized)
+    print(f"Depth map saved to {depth_path} with shape {depth_resized.shape}")
+
+    return img_rgb, depth_resized
 
 # ------------------------------
 # 2. Create 3D Parallax Animation
@@ -77,10 +72,10 @@ def create_cinematic(img, depth, output="cinematic.mp4"):
 
     # Meshgrid
     X, Y = np.meshgrid(np.linspace(-1, 1, w), np.linspace(-1, 1, h))
-    Z = depth * 0.3  # scale depth exaggeration
+    Z = depth * 0.03  # scale depth exaggeration
 
     # Set up figure
-    fig = plt.figure(figsize=(8,6))
+    fig = plt.figure(figsize=(18,16))
     ax = fig.add_subplot(111, projection="3d")
     ax.axis("off")
 
@@ -89,7 +84,7 @@ def create_cinematic(img, depth, output="cinematic.mp4"):
         ax.cla()
         ax.axis("off")
         # Camera motion: pan + zoom effect
-        ax.view_init(30, 30 + frame*0.5)
+        ax.view_init(-70, 70 + frame*0.5)
         ax.dist = 7 - (frame * 0.02)  # zoom-in effect
         ax.plot_surface(X, -Y, -Z, rstride=5, cstride=5,
                         facecolors=img/255, linewidth=0,
