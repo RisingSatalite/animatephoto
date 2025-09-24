@@ -12,6 +12,9 @@ import matplotlib
 import imageio_ffmpeg as ffmpeg
 import plotly.graph_objects as go
 
+from tkinter import Tk
+from tkinter.filedialog import askopenfilename
+
 # ------------------------------
 # 1. Generate Depth Map with MiDaS
 # ------------------------------
@@ -151,7 +154,9 @@ def explore_depth_plotly_rgb(img, depth):
 # Main
 # ------------------------------
 if __name__ == "__main__":
-    image_path = "cat.jpg"  # input image
+    Tk().withdraw() # we don't want a full GUI, so keep the root window from appearing
+    filename = askopenfilename()
+    image_path = filename  # input image
     print("Looking for:", os.path.abspath(image_path))
     print("Exists?", os.path.exists(image_path))
     img, depth = generate_depth(image_path)
