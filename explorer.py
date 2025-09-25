@@ -15,6 +15,8 @@ import plotly.graph_objects as go
 from tkinter import Tk
 from tkinter.filedialog import askopenfilename
 
+import json
+
 # ------------------------------
 # 1. Generate Depth Map with MiDaS
 # ------------------------------
@@ -143,6 +145,16 @@ def explore_depth_plotly_rgb(img, depth):
         vertexcolor=colors,  # 🔑 per-vertex pixel colors
         showscale=False
     )
+
+    # Save to JSON
+    with open("mesh.json", "w") as f:
+        f.write(mesh.to_json())
+
+    # Later, reload it
+    with open("mesh.json", "r") as f:
+        mesh_data = json.load(f)
+
+    restored_mesh = go.Mesh3d(**mesh_data)
 
     fig = go.Figure(data=[mesh])
     fig.update_layout(scene=dict(xaxis=dict(visible=False),
